@@ -11,7 +11,7 @@ This project is based on the [roadmap.sh Task Tracker challenge](https://roadmap
 ## Project status
 
 - [x] Step 1: Model tasks and their allowed statuses
-- [ ] Step 2: Parse commands and positional arguments
+- [x] Step 2: Parse commands and positional arguments
 - [ ] Step 3: Add tasks in memory
 - [ ] Step 4: Store tasks in a JSON file
 - [ ] Step 5: List and filter tasks
@@ -35,12 +35,32 @@ The first step introduces the core domain objects:
 The timestamps use `java.time.Instant`, which produces an ISO-8601 instant that
 can later be stored consistently in JSON.
 
+## Completed: Step 2 — Command-line parsing
+
+The command-line interface now:
+
+- Keeps `Main` as a small application entry point.
+- Delegates command-line behavior to `TaskCli`.
+- Recognizes `add`, `update`, `delete`, `mark-in-progress`, `mark-done`, and
+  `list` commands.
+- Accepts an optional status filter for `list`.
+- Validates positional argument counts before accessing array elements.
+- Converts task IDs from text to positive integers.
+- Rejects missing descriptions, invalid IDs, unknown commands, and invalid
+  status filters with clear error messages.
+- Prints a usage guide when the application receives no command.
+
+At this stage, the handlers confirm that each command was parsed successfully.
+They do not execute task operations yet.
+
 ## Current project structure
 
 ```text
 src/
 └── tasktracker/
     ├── Main.java
+    ├── cli/
+    │   └── TaskCli.java
     └── model/
         ├── Task.java
         └── TaskStatus.java
@@ -52,6 +72,7 @@ Compile the source files from the project root:
 
 ```bash
 javac -d out src/tasktracker/Main.java \
+  src/tasktracker/cli/TaskCli.java \
   src/tasktracker/model/Task.java \
   src/tasktracker/model/TaskStatus.java
 ```
@@ -62,5 +83,4 @@ Run the application:
 java -cp out tasktracker.Main
 ```
 
-At this stage, `Main` is a temporary executable demonstration of the domain
-model. Command-line operations and JSON persistence will be added in later steps.
+The current version parses and validates commands but does not persist tasks yet.

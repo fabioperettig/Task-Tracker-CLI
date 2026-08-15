@@ -11,6 +11,18 @@ public enum TaskStatus {
         this.value = value;
     }
 
+    public static TaskStatus fromValue(String value) {
+        for (TaskStatus status : values()) {
+            if (status.value.equals(value)) {
+                return status;
+            }
+        }
+
+        throw new IllegalArgumentException(
+                "Invalid task status: " + value
+        );
+    }
+
     public String getValue() {
         return value;
     }
