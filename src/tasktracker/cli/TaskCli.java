@@ -1,16 +1,41 @@
 package tasktracker.cli;
 
+import tasktracker.model.Task;
 import tasktracker.model.TaskStatus;
+import tasktracker.repository.JsonTaskRepository;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.io.IOException;
 
 public final class TaskCli {
+    private final JsonTaskRepository repository;
+    private final List<Task> tasks = new ArrayList<>();
+    private int nextTaskId = 1;
 
-    public void run(String[] args) {
-        if (args.length == 0) {
-            printUsage();
-            return;
+    public TaskCli(JsonTaskRepository repository) {
+        if (repository == null) {
+            throw new IllegalArgumentException("Task repository cannot be null");
         }
 
+        this.repository = repository;
+    }
+
+    public void run(String[] args) {
         try {
+            repository.initialize();
+            tasks.clear();
+            tasks.addAll(repository.loadTasks());
+
+            nextTaskId = tasks.stream()
+                    .mapToInt(Task::getId)
+                    .max().orElse(0) + 1;
+
+            if (args.length == 0) {
+                printUsage();
+                return;
+            }
+
             switch (args[0]) {
                 case "add" -> handleAdd(args);
                 case "update" -> handleUpdate(args);
@@ -20,18 +45,25 @@ public final class TaskCli {
                 case "list" -> handleList(args);
                 default -> throw new IllegalArgumentException("Unknown command: " + args[0]);
             }
-
         } catch (IllegalArgumentException exception) {
             System.err.println("Error: " + exception.getMessage());
+        } catch (IOException exception) {
+            System.err.println("Error: Could not access task storage: " + exception.getMessage());
         }
     }
 
     /// Handler methods
-    private void handleAdd(String[] args) {
-        requireArgumentCount(args,2,"Usage: task-cli add \"description\"");
+    private void handleAdd(String[] args) throws IOException {
+        requireArgumentCount(args, 2, "Usage: task-cli add \"description\"");
 
         String description = requireDescription(args[1]);
-        System.out.printf("Add command parsed: %s%n",description);
+        Task task = new Task(nextTaskId, description);
+        tasks.add(task);
+
+        repository.saveTasks(tasks);
+
+        nextTaskId++;
+        System.out.printf("Task added successfully (ID: %d)%n", task.getId());
     }
 
     private void handleUpdate(String[] args) {

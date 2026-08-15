@@ -12,8 +12,8 @@ This project is based on the [roadmap.sh Task Tracker challenge](https://roadmap
 
 - [x] Step 1: Model tasks and their allowed statuses
 - [x] Step 2: Parse commands and positional arguments
-- [ ] Step 3: Add tasks in memory
-- [ ] Step 4: Store tasks in a JSON file
+- [x] Step 3: Add tasks in memory
+- [x] Step 4: Store tasks in a JSON file
 - [ ] Step 5: List and filter tasks
 - [ ] Step 6: Update and delete tasks
 - [ ] Step 7: Change task statuses
@@ -51,20 +51,52 @@ The command-line interface now:
 - Prints a usage guide when the application receives no command.
 
 At this stage, the handlers confirm that each command was parsed successfully.
-They do not execute task operations yet.
+Except for `add`, they do not execute task operations yet.
+
+## Completed: Step 3 — Add tasks in memory
+
+The `add` command now:
+
+- Creates a `Task` with an automatically generated positive ID.
+- Stores the task in memory for the lifetime of the `TaskCli` instance.
+- Assigns sequential IDs starting at `1`.
+- Prints the ID of the newly created task.
+
+This in-memory implementation provided the foundation for the JSON persistence
+introduced in Step 4.
+
+## Completed: Step 4 — JSON file storage
+
+The application now persists tasks between separate executions:
+
+- `JsonTaskRepository` creates `tasks.json` automatically when necessary.
+- Tasks are serialized using only Java's standard library.
+- Existing tasks are loaded before each command is executed.
+- IDs continue from the highest persisted task ID.
+- Task statuses and timestamps are preserved when tasks are loaded.
+- Special characters in descriptions are escaped and restored.
+- Empty task arrays are handled correctly.
+- Invalid storage data produces a clear error instead of silently resetting tasks.
 
 ## Current project structure
 
 ```text
-src/
-└── tasktracker/
-    ├── Main.java
-    ├── cli/
-    │   └── TaskCli.java
-    └── model/
-        ├── Task.java
-        └── TaskStatus.java
+.
+├── tasks.json
+└── src/
+    └── tasktracker/
+        ├── Main.java
+        ├── cli/
+        │   └── TaskCli.java
+        ├── model/
+        │   ├── Task.java
+        │   └── TaskStatus.java
+        └── repository/
+            └── JsonTaskRepository.java
 ```
+
+The application creates `tasks.json` in the current working directory when the
+file does not exist.
 
 ## Running the current version
 
@@ -74,13 +106,16 @@ Compile the source files from the project root:
 javac -d out src/tasktracker/Main.java \
   src/tasktracker/cli/TaskCli.java \
   src/tasktracker/model/Task.java \
-  src/tasktracker/model/TaskStatus.java
+  src/tasktracker/model/TaskStatus.java \
+  src/tasktracker/repository/JsonTaskRepository.java
 ```
 
 Run the application:
 
 ```bash
-java -cp out tasktracker.Main
+java -cp out tasktracker.Main add "Buy groceries"
 ```
 
-The current version parses and validates commands but does not persist tasks yet.
+The current version persists added tasks and parses and validates the remaining
+commands. Listing, updating, deleting, and changing statuses will be implemented
+in the next steps.
