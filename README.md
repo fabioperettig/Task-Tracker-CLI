@@ -17,7 +17,7 @@ This project is based on the [roadmap.sh Task Tracker challenge](https://roadmap
 - [x] Step 5: List and filter tasks
 - [x] Step 6: Update and delete tasks
 - [x] Step 7: Change task statuses
-- [ ] Step 8: Handle errors and edge cases
+- [x] Step 8: Handle errors and edge cases
 - [ ] Step 9: Test and package the application
 
 ## Completed: Step 1 — Domain model
@@ -108,6 +108,20 @@ The status commands now:
 - Share the same status-change logic to avoid duplicated handlers.
 - Work with the status filters supported by `list`.
 
+## Completed: Step 8 — Errors and edge cases
+
+The application now handles failure scenarios more safely:
+
+- Malformed JSON and unparsed storage content are rejected.
+- Duplicate task IDs are detected while loading persisted data.
+- Task data is written to a temporary file before replacing `tasks.json`.
+- Atomic file replacement is used when supported by the filesystem.
+- Temporary files are cleaned up when a write fails.
+- Task ID overflow is detected before creating an invalid task.
+- Successful commands return exit code `0`.
+- Invalid commands or task data return exit code `1`.
+- Storage failures return exit code `2`.
+
 ## Current project structure
 
 ```text
@@ -152,6 +166,6 @@ java -cp out tasktracker.Main list done
 java -cp out tasktracker.Main delete 1
 ```
 
-The current version supports all required task operations. The remaining steps
-focus on strengthening error handling, covering edge cases, testing, and packaging
-the application.
+The current version supports all required task operations and handles invalid
+input and storage failures safely. The final step focuses on automated tests and
+packaging the application as an executable JAR.

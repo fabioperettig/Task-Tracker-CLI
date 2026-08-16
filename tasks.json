@@ -12,5 +12,19 @@
     "status": "todo",
     "createdAt": "2026-08-15T15:24:43.464857Z",
     "updatedAt": "2026-08-16T02:14:29.346396Z"
+  },
+  {
+    "id": 4,
+    "description": "teste de add manual",
+    "status": "todo",
+    "createdAt": "2026-08-16T02:44:42.333331Z",
+    "updatedAt": "2026-08-16T02:44:42.333331Z"
+  },
+  {
+    "id": 5,
+    "description": "comprar leite",
+    "status": "todo",
+    "createdAt": "2026-08-16T02:45:00.278424Z",
+    "updatedAt": "2026-08-16T02:45:34.850502Z"
   }
 ]

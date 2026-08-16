@@ -11,7 +11,6 @@ import java.io.IOException;
 public final class TaskCli {
     private final JsonTaskRepository repository;
     private final List<Task> tasks = new ArrayList<>();
-    private int nextTaskId = 1;
 
     public TaskCli(JsonTaskRepository repository) {
         if (repository == null) {
@@ -21,19 +20,15 @@ public final class TaskCli {
         this.repository = repository;
     }
 
-    public void run(String[] args) {
+    public int run(String[] args) {
         try {
             repository.initialize();
             tasks.clear();
             tasks.addAll(repository.loadTasks());
 
-            nextTaskId = tasks.stream()
-                    .mapToInt(Task::getId)
-                    .max().orElse(0) + 1;
-
             if (args.length == 0) {
                 printUsage();
-                return;
+                return 0;
             }
 
             switch (args[0]) {
@@ -45,24 +40,42 @@ public final class TaskCli {
                 case "list" -> handleList(args);
                 default -> throw new IllegalArgumentException("Unknown command: " + args[0]);
             }
+            return 0;
+
         } catch (IllegalArgumentException exception) {
             System.err.println("Error: " + exception.getMessage());
+            return 1;
         } catch (IOException exception) {
             System.err.println("Error: Could not access task storage: " + exception.getMessage());
+            return 2;
         }
     }
 
     /// Handler methods
     private void handleAdd(String[] args) throws IOException {
         requireArgumentCount(args, 2, "Usage: task-cli add \"description\"");
-
         String description = requireDescription(args[1]);
-        Task task = new Task(nextTaskId, description);
-        tasks.add(task);
 
+        int highestTaskId = tasks.stream()
+                .mapToInt(Task::getId)
+                .max()
+                .orElse(0);
+
+        int newTaskId;
+
+        try {
+            newTaskId = Math.addExact(highestTaskId, 1);
+        } catch (ArithmeticException exception) {
+            throw new IllegalArgumentException(
+                    "Cannot add task: task ID limit reached",
+                    exception
+            );
+        }
+
+        Task task = new Task(newTaskId, description);
+        tasks.add(task);
         repository.saveTasks(tasks);
 
-        nextTaskId++;
         System.out.printf("Task added successfully (ID: %d)%n", task.getId());
     }
 

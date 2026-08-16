@@ -9,8 +9,13 @@ public class Main {
 
     public static void main(String[] args) {
         JsonTaskRepository repository = new JsonTaskRepository(Path.of("tasks.json"));
+
         TaskCli cli = new TaskCli(repository);
-        cli.run(args);
+        int exitCode = cli.run(args);
+
+        if (exitCode != 0) {
+            System.exit(exitCode);
+        }
     }
 }
 

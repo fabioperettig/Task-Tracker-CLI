@@ -10,9 +10,13 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.StandardCopyOption;
 
 public final class JsonTaskRepository {
     private final Path filePath;
@@ -50,7 +54,35 @@ public final class JsonTaskRepository {
 
         String json = serializeTasks(tasks);
 
-        Files.writeString(filePath, json, StandardCharsets.UTF_8);
+        Path absoluteFilePath = filePath.toAbsolutePath();
+        Path parentDirectory = absoluteFilePath.getParent();
+
+        Path temporaryFile = Files.createTempFile(parentDirectory, "tasks-",".tmp");
+
+        try {
+            Files.writeString(
+                    temporaryFile,
+                    json,
+                    StandardCharsets.UTF_8
+            );
+
+            try {
+                Files.move(
+                        temporaryFile,
+                        absoluteFilePath,
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING
+                );
+            } catch (AtomicMoveNotSupportedException exception) {
+                Files.move(
+                        temporaryFile,
+                        absoluteFilePath,
+                        StandardCopyOption.REPLACE_EXISTING
+                );
+            }
+        } finally {
+            Files.deleteIfExists(temporaryFile);
+        }
     }
 
     public List<Task> loadTasks() throws IOException {
@@ -69,11 +101,29 @@ public final class JsonTaskRepository {
         }
 
         List<Task> tasks = new ArrayList<>();
-        Matcher matcher = TASK_PATTERN.matcher(json);
+        Set<Integer> taskIds = new HashSet<>();
+
+        Matcher matcher = TASK_PATTERN.matcher(arrayContent);
+        int previousMatchEnd = 0;
 
         while (matcher.find()) {
+            String separator = arrayContent.substring(previousMatchEnd, matcher.start()).trim();
+
+            if (tasks.isEmpty()) {
+                if (!separator.isEmpty()) {
+                    throw new IllegalArgumentException("Invalid tasks JSON");
+                }
+            } else if (!separator.equals(",")) {
+                throw new IllegalArgumentException("Invalid tasks JSON");
+            }
+
             try {
                 int id = Integer.parseInt(matcher.group(1));
+
+                if (!taskIds.add(id)) {
+                    throw new IllegalArgumentException("Duplicate task ID in JSON: " + id);
+                }
+
                 String description = unescapeJson(matcher.group(2));
                 TaskStatus status = TaskStatus.fromValue(matcher.group(3));
                 Instant createdAt = Instant.parse(matcher.group(4));
@@ -88,16 +138,16 @@ public final class JsonTaskRepository {
                 ));
             } catch (RuntimeException exception) {
                 throw new IllegalArgumentException(
-                        "Invalid task data in JSON",
-                        exception
-                );
+                        "Invalid task data in JSON: " + exception.getMessage(),exception);
             }
+            previousMatchEnd = matcher.end();
         }
 
-        if (tasks.isEmpty()) {
+        String remainingContent = arrayContent.substring(previousMatchEnd).trim();
+
+        if (tasks.isEmpty() || !remainingContent.isEmpty()) {
             throw new IllegalArgumentException("Invalid tasks JSON");
         }
-
         return tasks;
     }
 
