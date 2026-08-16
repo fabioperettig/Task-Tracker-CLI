@@ -14,9 +14,9 @@ This project is based on the [roadmap.sh Task Tracker challenge](https://roadmap
 - [x] Step 2: Parse commands and positional arguments
 - [x] Step 3: Add tasks in memory
 - [x] Step 4: Store tasks in a JSON file
-- [ ] Step 5: List and filter tasks
-- [ ] Step 6: Update and delete tasks
-- [ ] Step 7: Change task statuses
+- [x] Step 5: List and filter tasks
+- [x] Step 6: Update and delete tasks
+- [x] Step 7: Change task statuses
 - [ ] Step 8: Handle errors and edge cases
 - [ ] Step 9: Test and package the application
 
@@ -78,6 +78,36 @@ The application now persists tasks between separate executions:
 - Empty task arrays are handled correctly.
 - Invalid storage data produces a clear error instead of silently resetting tasks.
 
+## Completed: Step 5 — List and filter tasks
+
+The `list` command now:
+
+- Displays every persisted task when no filter is provided.
+- Filters tasks by `todo`, `in-progress`, or `done` status.
+- Shows each task's ID, description, status, creation time, and update time.
+- Prints a clear message when no tasks match the requested filter.
+- Rejects invalid status filters.
+
+## Completed: Step 6 — Update and delete tasks
+
+The application now:
+
+- Finds persisted tasks by their positive IDs.
+- Updates task descriptions and their `updatedAt` timestamps.
+- Deletes tasks without affecting the remaining entries.
+- Saves updates and deletions back to `tasks.json`.
+- Reports an error when the requested task does not exist.
+
+## Completed: Step 7 — Change task statuses
+
+The status commands now:
+
+- Mark tasks as `in-progress` or `done`.
+- Update the task's `updatedAt` timestamp after a status change.
+- Persist status changes between separate executions.
+- Share the same status-change logic to avoid duplicated handlers.
+- Work with the status filters supported by `list`.
+
 ## Current project structure
 
 ```text
@@ -114,8 +144,14 @@ Run the application:
 
 ```bash
 java -cp out tasktracker.Main add "Buy groceries"
+java -cp out tasktracker.Main list
+java -cp out tasktracker.Main update 1 "Buy groceries and cook dinner"
+java -cp out tasktracker.Main mark-in-progress 1
+java -cp out tasktracker.Main mark-done 1
+java -cp out tasktracker.Main list done
+java -cp out tasktracker.Main delete 1
 ```
 
-The current version persists added tasks and parses and validates the remaining
-commands. Listing, updating, deleting, and changing statuses will be implemented
-in the next steps.
+The current version supports all required task operations. The remaining steps
+focus on strengthening error handling, covering edge cases, testing, and packaging
+the application.

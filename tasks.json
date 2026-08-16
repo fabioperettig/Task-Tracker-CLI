@@ -2,22 +2,15 @@
   {
     "id": 1,
     "description": "Estudar Java",
-    "status": "todo",
+    "status": "done",
     "createdAt": "2026-08-15T14:45:10.213559Z",
-    "updatedAt": "2026-08-15T14:45:10.213559Z"
+    "updatedAt": "2026-08-16T02:27:51.744750Z"
   },
   {
     "id": 2,
-    "description": "Segunda tarefa",
+    "description": "Descrição atualizada",
     "status": "todo",
     "createdAt": "2026-08-15T15:24:43.464857Z",
-    "updatedAt": "2026-08-15T15:24:43.464857Z"
-  },
-  {
-    "id": 3,
-    "description": "Terceira tarefa",
-    "status": "todo",
-    "createdAt": "2026-08-15T15:24:43.535142Z",
-    "updatedAt": "2026-08-15T15:24:43.535142Z"
+    "updatedAt": "2026-08-16T02:14:29.346396Z"
   }
 ]

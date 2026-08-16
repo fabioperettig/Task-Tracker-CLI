@@ -66,51 +66,107 @@ public final class TaskCli {
         System.out.printf("Task added successfully (ID: %d)%n", task.getId());
     }
 
-    private void handleUpdate(String[] args) {
+    private void handleUpdate(String[] args) throws IOException {
         requireArgumentCount(args,3,"Usage: task-cli update <id> \"description\"");
 
         int id = parseId(args[1]);
         String description = requireDescription(args[2]);
-        System.out.printf("Update command parsed for task ID: %d, description: %s%n", id, description);
+
+        Task task = findTaskById(id);
+        task.updateDescription(description);
+
+        repository.saveTasks(tasks);
+
+        System.out.printf("Task updated successfully (ID: %d)%n",task.getId());
     }
 
-    private void handleDelete(String[] args) {
+    private void handleDelete(String[] args) throws IOException {
         requireArgumentCount(args, 2, "Usage: task-cli delete <id>");
 
         int id = parseId(args[1]);
-        System.out.printf("Delete command parsed for task ID: %d%n", id);
+        Task task = findTaskById(id);
+
+        tasks.remove(task);
+        repository.saveTasks(tasks);
+
+        System.out.printf("Task deleted successfully (ID: %d)%n", task.getId());
     }
 
-    private void handleMarkInProgress(String[] args) {
-        requireArgumentCount(args, 2, "Usage: task-cli mark-in-progress <id>");
-
-        int id = parseId(args[1]);
-        System.out.printf("Mark-in-progress command parsed for task ID: %d%n", id);
+    private void handleMarkInProgress(String[] args) throws IOException {
+        changeTaskStatus(args, TaskStatus.IN_PROGRESS, "Usage: task-cli mark-in-progress <id>");
     }
 
-    private void handleMarkDone(String[] args) {
-        requireArgumentCount(args, 2, "Usage: task-cli mark-done <id>");
-
-        int id = parseId(args[1]);
-        System.out.printf("Mark-done command parsed for task ID: %d%n", id);
+    private void handleMarkDone(String[] args) throws IOException {
+        changeTaskStatus(args, TaskStatus.DONE, "Usage: task-cli mark-done <id>");
     }
 
     private void handleList(String[] args) {
-        if (args.length == 1) {
-            System.out.println("List all tasks command parsed");
-            return;
+        if (args.length > 2) {
+            throw new IllegalArgumentException("Usage: task-cli list [todo|in-progress|done]");
         }
+
+        TaskStatus statusFilter = null;
 
         if (args.length == 2) {
-            TaskStatus status = TaskStatus.fromValue(args[1]);
-
-            System.out.printf("List tasks by status command parsed: %s%n", status.getValue());
-            return;
+            statusFilter = TaskStatus.fromValue(args[1]);
         }
 
-        throw new IllegalArgumentException(
-                "Usage: task-cli list [todo|in-progress|done]"
+        boolean taskFound = false;
+
+        for (Task task : tasks) {
+            if (statusFilter != null && task.getStatus() != statusFilter) {
+                continue;
+            }
+
+            printTask(task);
+            taskFound = true;
+        }
+
+        if (!taskFound) {
+            System.out.println("No tasks found");
+        }
+    }
+
+    private void printTask(Task task) {
+        System.out.printf("""
+            ID: %d
+            Description: %s
+            Status: %s
+            Created at: %s
+            Updated at: %s
+
+            """,
+                task.getId(),
+                task.getDescription(),
+                task.getStatus().getValue(),
+                task.getCreatedAt(),
+                task.getUpdatedAt()
         );
+    }
+
+    private Task findTaskById(int id) {
+        for (Task task : tasks) {
+            if (task.getId() == id) {
+                return task;
+            }
+        }
+
+        throw new IllegalArgumentException(String.format("Task not found with the ID: %d", id));
+    }
+
+    private void changeTaskStatus(String[] args,
+                                  TaskStatus newStatus,
+                                  String usage) throws IOException {
+        requireArgumentCount(args, 2, usage);
+
+        int id = parseId(args[1]);
+        Task task = findTaskById(id);
+
+        task.updateStatus(newStatus);
+        repository.saveTasks(tasks);
+
+        System.out.printf("Task status updated successfully (ID: %d, status: %s)%n",
+                task.getId(), task.getStatus().getValue());
     }
 
     /// Validation helpers
