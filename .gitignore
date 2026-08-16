@@ -4,6 +4,9 @@ out/
 !**/src/test/**/out/
 .kotlin
 
+# Task Tracker runtime data
+tasks.json
+
 ### Eclipse ###
 .apt_generated
 .classpath

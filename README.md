@@ -1,5 +1,6 @@
 ![Java](https://img.shields.io/badge/java-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Static Badge](https://img.shields.io/badge/Roadmap-black?style=for-the-badge&logo=roadmapdotsh)
+
 # Task Tracker CLI
 
 A command-line application for creating, updating, deleting, and tracking tasks.
@@ -8,164 +9,215 @@ using external libraries or frameworks.
 
 This project is based on the [roadmap.sh Task Tracker challenge](https://roadmap.sh/projects/task-tracker).
 
-## Project status
+> Want the complete explanation?
+> Read the [English project guide](docs/PROJECT_GUIDE.md) or the
+> [guia completo em Português](docs/GUIA_DO_PROJETO_PT_BR.md).
 
-- [x] Step 1: Model tasks and their allowed statuses
-- [x] Step 2: Parse commands and positional arguments
-- [x] Step 3: Add tasks in memory
-- [x] Step 4: Store tasks in a JSON file
-- [x] Step 5: List and filter tasks
-- [x] Step 6: Update and delete tasks
-- [x] Step 7: Change task statuses
-- [x] Step 8: Handle errors and edge cases
-- [ ] Step 9: Test and package the application
+## Features
 
-## Completed: Step 1 — Domain model
-
-The first step introduces the core domain objects:
-
-- `Task` represents a task and protects its state through encapsulation.
-- `TaskStatus` restricts task statuses to `todo`, `in-progress`, and `done`.
-- New tasks start with the `todo` status.
-- A task rejects empty descriptions and null statuses.
-- `id` and `createdAt` cannot change after creation.
-- Changing a description or status updates `updatedAt`.
-- `createdAt` and `updatedAt` are identical when a task is first created.
-
-The timestamps use `java.time.Instant`, which produces an ISO-8601 instant that
-can later be stored consistently in JSON.
-
-## Completed: Step 2 — Command-line parsing
-
-The command-line interface now:
-
-- Keeps `Main` as a small application entry point.
-- Delegates command-line behavior to `TaskCli`.
-- Recognizes `add`, `update`, `delete`, `mark-in-progress`, `mark-done`, and
-  `list` commands.
-- Accepts an optional status filter for `list`.
-- Validates positional argument counts before accessing array elements.
-- Converts task IDs from text to positive integers.
-- Rejects missing descriptions, invalid IDs, unknown commands, and invalid
-  status filters with clear error messages.
-- Prints a usage guide when the application receives no command.
-
-At this stage, the handlers confirm that each command was parsed successfully.
-Except for `add`, they do not execute task operations yet.
-
-## Completed: Step 3 — Add tasks in memory
-
-The `add` command now:
-
-- Creates a `Task` with an automatically generated positive ID.
-- Stores the task in memory for the lifetime of the `TaskCli` instance.
-- Assigns sequential IDs starting at `1`.
-- Prints the ID of the newly created task.
-
-This in-memory implementation provided the foundation for the JSON persistence
-introduced in Step 4.
-
-## Completed: Step 4 — JSON file storage
-
-The application now persists tasks between separate executions:
-
-- `JsonTaskRepository` creates `tasks.json` automatically when necessary.
-- Tasks are serialized using only Java's standard library.
-- Existing tasks are loaded before each command is executed.
-- IDs continue from the highest persisted task ID.
-- Task statuses and timestamps are preserved when tasks are loaded.
-- Special characters in descriptions are escaped and restored.
-- Empty task arrays are handled correctly.
-- Invalid storage data produces a clear error instead of silently resetting tasks.
-
-## Completed: Step 5 — List and filter tasks
-
-The `list` command now:
-
-- Displays every persisted task when no filter is provided.
-- Filters tasks by `todo`, `in-progress`, or `done` status.
-- Shows each task's ID, description, status, creation time, and update time.
-- Prints a clear message when no tasks match the requested filter.
-- Rejects invalid status filters.
-
-## Completed: Step 6 — Update and delete tasks
-
-The application now:
-
-- Finds persisted tasks by their positive IDs.
-- Updates task descriptions and their `updatedAt` timestamps.
-- Deletes tasks without affecting the remaining entries.
-- Saves updates and deletions back to `tasks.json`.
-- Reports an error when the requested task does not exist.
-
-## Completed: Step 7 — Change task statuses
-
-The status commands now:
-
+- Add tasks with automatically generated positive IDs.
+- Update task descriptions.
+- Delete tasks.
 - Mark tasks as `in-progress` or `done`.
-- Update the task's `updatedAt` timestamp after a status change.
-- Persist status changes between separate executions.
-- Share the same status-change logic to avoid duplicated handlers.
-- Work with the status filters supported by `list`.
+- List every task or filter by `todo`, `in-progress`, or `done`.
+- Preserve statuses and ISO-8601 timestamps between executions.
+- Reject malformed JSON, duplicate IDs, invalid commands, and invalid input.
+- Protect persisted data with temporary files and atomic replacement when
+  supported by the filesystem.
+- Return meaningful process exit codes for scripts and automation.
+- Run automated model, repository, and CLI workflow tests.
+- Package production classes as an executable JAR.
 
-## Completed: Step 8 — Errors and edge cases
+## Requirements
 
-The application now handles failure scenarios more safely:
+- JDK 17 or newer.
+- No external dependencies, frameworks, or build tools.
 
-- Malformed JSON and unparsed storage content are rejected.
-- Duplicate task IDs are detected while loading persisted data.
-- Task data is written to a temporary file before replacing `tasks.json`.
-- Atomic file replacement is used when supported by the filesystem.
-- Temporary files are cleaned up when a write fails.
-- Task ID overflow is detected before creating an invalid task.
-- Successful commands return exit code `0`.
-- Invalid commands or task data return exit code `1`.
-- Storage failures return exit code `2`.
-
-## Current project structure
-
-```text
-.
-├── tasks.json
-└── src/
-    └── tasktracker/
-        ├── Main.java
-        ├── cli/
-        │   └── TaskCli.java
-        ├── model/
-        │   ├── Task.java
-        │   └── TaskStatus.java
-        └── repository/
-            └── JsonTaskRepository.java
-```
-
-The application creates `tasks.json` in the current working directory when the
-file does not exist.
-
-## Running the current version
-
-Compile the source files from the project root:
+Check your Java installation:
 
 ```bash
-javac -d out src/tasktracker/Main.java \
+java -version
+javac -version
+```
+
+## Quick start
+
+Compile the application from the project root:
+
+```bash
+javac -d out \
+  src/tasktracker/Main.java \
   src/tasktracker/cli/TaskCli.java \
   src/tasktracker/model/Task.java \
   src/tasktracker/model/TaskStatus.java \
   src/tasktracker/repository/JsonTaskRepository.java
 ```
 
-Run the application:
+Add and list tasks:
 
 ```bash
 java -cp out tasktracker.Main add "Buy groceries"
 java -cp out tasktracker.Main list
+```
+
+The application creates `tasks.json` in the current working directory when the
+file does not exist. This runtime file is ignored by Git.
+
+## Command reference
+
+| Command | Description |
+| --- | --- |
+| `add "description"` | Create a task with `todo` status. |
+| `update <id> "description"` | Change a task description. |
+| `delete <id>` | Delete a task. |
+| `mark-in-progress <id>` | Change a task status to `in-progress`. |
+| `mark-done <id>` | Change a task status to `done`. |
+| `list` | Display every task. |
+| `list <status>` | Display tasks matching `todo`, `in-progress`, or `done`. |
+
+Example workflow:
+
+```bash
+java -cp out tasktracker.Main add "Buy groceries"
 java -cp out tasktracker.Main update 1 "Buy groceries and cook dinner"
 java -cp out tasktracker.Main mark-in-progress 1
+java -cp out tasktracker.Main list in-progress
 java -cp out tasktracker.Main mark-done 1
-java -cp out tasktracker.Main list done
 java -cp out tasktracker.Main delete 1
 ```
 
-The current version supports all required task operations and handles invalid
-input and storage failures safely. The final step focuses on automated tests and
-packaging the application as an executable JAR.
+## Data format
+
+Each task contains an ID, description, status, creation timestamp, and update
+timestamp:
+
+```json
+[
+  {
+    "id": 1,
+    "description": "Buy groceries",
+    "status": "todo",
+    "createdAt": "2026-08-16T12:00:00Z",
+    "updatedAt": "2026-08-16T12:00:00Z"
+  }
+]
+```
+
+## Architecture
+
+```text
+Main
+└── TaskCli
+    ├── Task / TaskStatus
+    └── JsonTaskRepository
+        └── tasks.json
+```
+
+- `Main` wires the application and forwards exit codes to the operating system.
+- `TaskCli` validates commands and coordinates task operations.
+- `Task` and `TaskStatus` protect domain rules.
+- `JsonTaskRepository` owns file creation, JSON conversion, validation, and
+  safe replacement.
+
+See the study guides for the complete request flow and the reasoning behind each
+layer.
+
+## Project structure
+
+```text
+.
+├── docs/
+│   ├── GUIA_DO_PROJETO_PT_BR.md
+│   └── PROJECT_GUIDE.md
+├── src/
+│   └── tasktracker/
+│       ├── Main.java
+│       ├── cli/
+│       │   └── TaskCli.java
+│       ├── model/
+│       │   ├── Task.java
+│       │   └── TaskStatus.java
+│       └── repository/
+│           └── JsonTaskRepository.java
+└── test/
+    └── tasktracker/
+        ├── cli/
+        │   └── TaskCliTest.java
+        ├── model/
+        │   └── TaskTest.java
+        └── repository/
+            └── JsonTaskRepositoryTest.java
+```
+
+## Running the tests
+
+Compile production and test sources:
+
+```bash
+javac -d out/test \
+  src/tasktracker/Main.java \
+  src/tasktracker/cli/TaskCli.java \
+  src/tasktracker/model/Task.java \
+  src/tasktracker/model/TaskStatus.java \
+  src/tasktracker/repository/JsonTaskRepository.java \
+  test/tasktracker/model/TaskTest.java \
+  test/tasktracker/repository/JsonTaskRepositoryTest.java \
+  test/tasktracker/cli/TaskCliTest.java
+```
+
+Run the three test suites with Java assertions enabled:
+
+```bash
+java -ea -cp out/test tasktracker.model.TaskTest
+java -ea -cp out/test tasktracker.repository.JsonTaskRepositoryTest
+java -ea -cp out/test tasktracker.cli.TaskCliTest
+```
+
+## Building the executable JAR
+
+Compile production classes and create the distribution:
+
+```bash
+javac -d out/package \
+  src/tasktracker/Main.java \
+  src/tasktracker/cli/TaskCli.java \
+  src/tasktracker/model/Task.java \
+  src/tasktracker/model/TaskStatus.java \
+  src/tasktracker/repository/JsonTaskRepository.java
+
+mkdir -p dist
+jar --create \
+  --file dist/task-tracker-cli.jar \
+  --main-class tasktracker.Main \
+  -C out/package .
+```
+
+Run the packaged application:
+
+```bash
+java -jar dist/task-tracker-cli.jar list
+```
+
+## Exit codes
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Command completed successfully. |
+| `1` | Invalid command, argument, task data, or storage content. |
+| `2` | The application could not access task storage. |
+
+## Documentation
+
+- [Complete project guide — English](docs/PROJECT_GUIDE.md)
+- [Guia completo do projeto — Português (Brasil)](docs/GUIA_DO_PROJETO_PT_BR.md)
+
+The guides document the nine implementation stages, architecture, persistence
+strategy, error handling, tests, limitations, and the libraries commonly used to
+replace the manual implementations in production projects.
+
+## Project status
+
+Complete. The application satisfies the requirements of the
+[roadmap.sh Task Tracker challenge](https://roadmap.sh/projects/task-tracker).
+The deliberately manual JSON, command parsing, testing, and packaging code exists
+to expose the fundamentals normally hidden by libraries and build tools.
